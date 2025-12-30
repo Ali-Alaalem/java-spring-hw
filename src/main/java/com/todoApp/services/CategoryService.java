@@ -1,5 +1,6 @@
 package com.todoApp.services;
 
+import com.todoApp.exceptions.InformationNotFoundException;
 import com.todoApp.models.Category;
 import com.todoApp.repositorys.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,17 +23,34 @@ public class CategoryService {
     }
 
     public Category createCategory(Category objectCategory){
-        return categoryRepository.save(objectCategory);
+        Category category = categoryRepository.findByName(objectCategory.getName());
+        if(category!=null){
+            throw new RuntimeException("category with name "+category.getName()+" already exist");
+        }
+        else {
+            return categoryRepository.save(objectCategory);
+        }
     }
+
+
     public Optional<Category> getCategoryById(Long categoryId){
-     return categoryRepository.findById(categoryId);
+        Optional<Category> category = categoryRepository.findById(categoryId);
+        if (category.isPresent()){
+            return categoryRepository.findById(categoryId);
+        }else {
+            throw new InformationNotFoundException("category with id "+categoryId +"Not found");
+        }
     }
 
     public Category updateCategory(Long categoryId , Category objectCategory){
      Optional<Category> category = categoryRepository.findById(categoryId);
-     category.get().setName(objectCategory.getName());
-     category.get().setDescription(objectCategory.getDescription());
 
+        if (category.isPresent()) {
+            category.get().setName(objectCategory.getName());
+            category.get().setDescription(objectCategory.getDescription());
+        }else {
+            throw new InformationNotFoundException("category with id "+categoryId +"Not found");
+        }
      return categoryRepository.save(category.get());
 
     }

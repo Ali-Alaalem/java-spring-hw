@@ -3,6 +3,8 @@ package com.todoApp.models;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,4 +18,7 @@ public class Category {
     private Long id;
     private String name;
     private String description;
+
+    @OneToMany(fetch = FetchType.EAGER,mappedBy = "category",orphanRemoval = true)
+    private List<Item> items;
 }

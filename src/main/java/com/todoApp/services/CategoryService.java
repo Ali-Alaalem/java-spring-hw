@@ -2,8 +2,11 @@ package com.todoApp.services;
 
 import com.todoApp.exceptions.InformationNotFoundException;
 import com.todoApp.models.Category;
+import com.todoApp.models.User;
 import com.todoApp.repositorys.CategoryRepository;
+import com.todoApp.security.MyUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,32 +21,43 @@ public class CategoryService {
         this.categoryRepository = categoryRepository;
     }
 
-    public List<Category> getAllCategories(){
-        return categoryRepository.findAll();
+    public static User getCurrentLoggedInUser(){
+        MyUserDetails userDetails=(MyUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userDetails.getUser();
     }
 
-    public Category createCategory(Category objectCategory){
-        Category category = categoryRepository.findByName(objectCategory.getName());
+    public List<Category> getAllCategories(){
+        List<Category> category = categoryRepository.findByUserId(CategoryService.getCurrentLoggedInUser().getId());
+        return category;
+    }
+
+    public Category createCategory(Category categoryObject){
+        Category category = categoryRepository.findByUserIdAndName(
+                CategoryService.getCurrentLoggedInUser().getId()
+                ,categoryObject.getName());
         if(category!=null){
             throw new RuntimeException("category with name "+category.getName()+" already exist");
         }
         else {
-            return categoryRepository.save(objectCategory);
+            categoryObject.setUser(getCurrentLoggedInUser());
+            return categoryRepository.save(categoryObject);
         }
+
     }
 
 
     public Optional<Category> getCategoryById(Long categoryId){
-        Optional<Category> category = categoryRepository.findById(categoryId);
+
+        Optional<Category> category = Optional.ofNullable(categoryRepository.findByIdAndUserId(categoryId, CategoryService.getCurrentLoggedInUser().getId()));
         if (category.isPresent()){
-            return categoryRepository.findById(categoryId);
+            return category;
         }else {
             throw new InformationNotFoundException("category with id "+categoryId +"Not found");
         }
     }
 
     public Category updateCategory(Long categoryId , Category objectCategory){
-     Optional<Category> category = categoryRepository.findById(categoryId);
+     Optional<Category> category =  Optional.ofNullable(categoryRepository.findByIdAndUserId(categoryId, CategoryService.getCurrentLoggedInUser().getId()));
 
         if (category.isPresent()) {
             category.get().setName(objectCategory.getName());
@@ -56,7 +70,12 @@ public class CategoryService {
     }
 
     public void deleteCategory(Long categoryId){
-     categoryRepository.deleteById(categoryId);
+        Optional<Category> category=categoryRepository.findById(categoryId);
+        if(category.get().getUser().getId().equals(CategoryService.getCurrentLoggedInUser().getId())) {
+            categoryRepository.deleteById(categoryId);
+        }else{
+            throw new InformationNotFoundException("You dont own this category");
+        }
     }
 
 

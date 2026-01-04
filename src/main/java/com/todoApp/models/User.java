@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,5 +29,10 @@ public class User {
     @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private UserProfile userProfile;
 
+    @OneToMany(mappedBy = "user",fetch = FetchType.LAZY)
+    private List<Item> Items;
+
+    @OneToMany(mappedBy = "user",fetch = FetchType.LAZY)
+    private List<Category> categoryList;
 
 }
